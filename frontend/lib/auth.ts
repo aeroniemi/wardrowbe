@@ -91,6 +91,7 @@ function getProviders() {
 
 export const authOptions: NextAuthOptions = {
   providers: getProviders(),
+  trustHost: true,
   callbacks: {
     async jwt({ token, user, account, trigger }) {
       const apiUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://backend:8000';
