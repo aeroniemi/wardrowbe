@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     oidc_client_secret: str | None = None
     oidc_mobile_client_id: str | None = None
 
+    # Authentication - Google OAuth (automatically configures OIDC)
+    google_client_id: str | None = Field(default=None)
+    google_client_secret: str | None = None
+
     # AI Service (OpenAI-compatible API - supports Ollama, OpenAI, etc.)
     ai_base_url: str = Field(default="")
     ai_api_key: str | None = Field(default=None)
@@ -87,17 +91,35 @@ class Settings(BaseSettings):
 
         oidc_issuer = bool(self.oidc_issuer_url)
         oidc_client = bool(self.oidc_client_id)
+        google_client = bool(self.google_client_id)
+        google_secret = bool(self.google_client_secret)
+
+        # Check for partial OIDC configuration
         if oidc_issuer != oidc_client:
             raise RuntimeError(
                 "OIDC is partially configured: both OIDC_ISSUER_URL and OIDC_CLIENT_ID must be set together."
             )
 
+        # Check for partial Google OAuth configuration
+        if google_client != google_secret:
+            raise RuntimeError(
+                "Google OAuth is partially configured: both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together."
+            )
+
         oidc_configured = oidc_issuer and oidc_client
+        google_configured = google_client and google_secret
         is_dev = self.debug and self.secret_key == DEFAULT_SECRET_KEY
-        if not oidc_configured and not is_dev:
+
+        # If both OIDC and Google are configured, prefer OIDC
+        if oidc_configured and google_configured:
+            logger.warning("Both OIDC and Google OAuth are configured. Using OIDC.")
+
+        if not oidc_configured and not google_configured and not is_dev:
             return (
                 "No authentication method configured. "
-                "Set OIDC_ISSUER_URL + OIDC_CLIENT_ID, or enable DEBUG mode."
+                "Set OIDC_ISSUER_URL + OIDC_CLIENT_ID, "
+                "or GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET, "
+                "or enable DEBUG mode."
             )
 
         return None
@@ -107,7 +129,36 @@ class Settings(BaseSettings):
             return "dev"
         if self.oidc_issuer_url and self.oidc_client_id:
             return "oidc"
+        if self.google_client_id and self.google_client_secret:
+            return "google"
         return "unknown"
+
+    @property
+    def effective_oidc_issuer_url(self) -> str | None:
+        """Get the effective OIDC issuer URL, using Google if configured."""
+        if self.oidc_issuer_url:
+            return self.oidc_issuer_url
+        if self.google_client_id and self.google_client_secret:
+            return "https://accounts.google.com"
+        return None
+
+    @property
+    def effective_oidc_client_id(self) -> str | None:
+        """Get the effective OIDC client ID, using Google if configured."""
+        if self.oidc_client_id:
+            return self.oidc_client_id
+        if self.google_client_id and self.google_client_secret:
+            return self.google_client_id
+        return None
+
+    @property
+    def effective_oidc_client_secret(self) -> str | None:
+        """Get the effective OIDC client secret, using Google if configured."""
+        if self.oidc_client_secret:
+            return self.oidc_client_secret
+        if self.google_client_id and self.google_client_secret:
+            return self.google_client_secret
+        return None
 
 
 @lru_cache

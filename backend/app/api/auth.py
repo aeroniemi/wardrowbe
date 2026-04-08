@@ -44,7 +44,7 @@ def _is_dev_mode() -> bool:
 
 
 def _oidc_configured() -> bool:
-    return bool(settings.oidc_issuer_url and settings.oidc_client_id)
+    return bool(settings.effective_oidc_issuer_url and settings.effective_oidc_client_id)
 
 
 @router.get("/config", response_model=AuthConfigResponse)
@@ -53,8 +53,8 @@ async def get_auth_config() -> AuthConfigResponse:
     return AuthConfigResponse(
         oidc=AuthConfigOIDC(
             enabled=oidc_enabled,
-            issuer_url=settings.oidc_issuer_url if oidc_enabled else None,
-            client_id=(settings.oidc_mobile_client_id or settings.oidc_client_id)
+            issuer_url=settings.effective_oidc_issuer_url if oidc_enabled else None,
+            client_id=(settings.oidc_mobile_client_id or settings.effective_oidc_client_id)
             if oidc_enabled
             else None,
         ),
@@ -93,17 +93,17 @@ async def sync_user(
                 detail="OIDC id_token is required for authentication",
             )
 
-        valid_audiences = [settings.oidc_client_id]
+        valid_audiences = [settings.effective_oidc_client_id]
         if (
             settings.oidc_mobile_client_id
-            and settings.oidc_mobile_client_id != settings.oidc_client_id
+            and settings.oidc_mobile_client_id != settings.effective_oidc_client_id
         ):
             valid_audiences.append(settings.oidc_mobile_client_id)
 
         try:
             oidc_claims = await validate_oidc_id_token(
                 sync_data.id_token,
-                settings.oidc_issuer_url,
+                settings.effective_oidc_issuer_url,
                 valid_audiences,
             )
         except ValueError as e:
