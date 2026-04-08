@@ -1,5 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import type { OAuthConfig } from 'next-auth/providers/oauth';
+import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 interface OIDCProfile {
@@ -60,17 +61,31 @@ const DevCredentialsProvider = CredentialsProvider({
     };
   },
 });
+
 // Determine which provider to use
 function getProviders() {
   const providers = [];
 
+  // Google OAuth (if credentials are configured)
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    providers.push(
+      GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      })
+    );
+  }
+
+  // Generic OIDC provider (if configured)
   if (process.env.OIDC_ISSUER_URL) {
     providers.push(OIDCProvider);
   }
 
+  // Dev credentials provider (for development)
   if (process.env.DEV_MODE === 'true' || process.env.NODE_ENV === 'development') {
     providers.push(DevCredentialsProvider);
   }
+
   return providers;
 }
 
