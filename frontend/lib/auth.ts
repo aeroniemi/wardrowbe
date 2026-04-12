@@ -73,16 +73,25 @@ function getProviders() {
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     providers.push(
       GoogleProvider({
+        id: "oidc",
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        authorization: {
+          params: {
+            scope: 'openid email profile',
+            prompt: "consent",
+            access_type: "offline",
+            response_type: "code"
+          }
+        },
       })
     );
   }
 
   // Generic OIDC provider (if configured)
-  if (process.env.OIDC_ISSUER_URL) {
-    providers.push(OIDCProvider);
-  }
+  // if (process.env.OIDC_ISSUER_URL) {
+  //   providers.push(OIDCProvider);
+  // }
 
   // Dev credentials provider (for development)
   if (process.env.DEV_MODE === 'true' || process.env.NODE_ENV === 'development') {
