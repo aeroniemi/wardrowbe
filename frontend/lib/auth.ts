@@ -21,7 +21,10 @@ const OIDCProvider: OAuthConfig<OIDCProfile> = {
   authorization: {
     params: {
       scope: 'openid email profile',
-    },
+      prompt: "consent",
+      access_type: "offline",
+      response_type: "code"
+    }
   },
   idToken: true,
   checks: ['pkce', 'state'],
