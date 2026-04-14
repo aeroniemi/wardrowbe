@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
         REGISTRY: ghcr.io
-        IMAGE_NAME: ${{ github.repository_owner }}/${{ github.repository }}
     permissions:
       contents: read
       packages: write
@@ -32,8 +31,8 @@ jobs:
           context: ./frontend
           push: true
           tags: |
-            ${{ env.REGISTRY }}/wardrowbe-frontend:${{ github.sha }}
-            ${{ env.REGISTRY }}/wardrowbe-frontend:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/wardrowbe-frontend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/wardrowbe-frontend:latest
 
       - name: Build and push wardrobe-backend image
         uses: docker/build-push-action@v5
@@ -41,5 +40,5 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ${{ env.REGISTRY }}/wardrowbe-backend:${{ github.sha }}
-            ${{ env.REGISTRY }}/wardrowbe-backend:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/wardrowbe-backend:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/wardrowbe-backend:latest
